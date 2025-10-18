@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	// 1. 커맨드라인 플래그(옵션) 정의
 	// -t: 기준 시간 (생략 가능, 기본값: 현재 시간)
 	// -d: 더하거나 뺄 시간 (생략 가능, 기본값: 0)
 	// -u: 출력 단위 (생략 가능, 기본값: nano)
@@ -18,7 +17,11 @@ func main() {
 	outputUnit := flag.String("u", "nano", "- 출력 단위: nano, micro, milli, sec\n- ex: ug -d 10m -u milli\n- 현재 시간의 10분 후 시간을 unixtime milli 단위로 변환")
 	toDateTime := flag.Int64("dt", 0, "- unixtime을 datetime으로 변환\n- ex: ug -dt 1760807714195896000\n- 이 옵션 사용시 'u' 옵션만 사용 가능, 다른 옵션(d, t)은 무시 됨\n- 옵션을 생략하면 자동으로 nano단위로 변환하고 다른 단위의 unixtime을 입력할 경우 반드시 'u' 옵션을 통해 단위를 지정해줘야 함")
 
-	// 프로그램에 전달된 옵션 파싱
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "### 아무 옵션 없이 'ug' 실행시 현재 시간 기준으로 unixtime nano 출력 ###\n\n")
+		flag.PrintDefaults() // 기존 플래그 옵션 출력
+	}
+
 	flag.Parse()
 
 	if *toDateTime != 0 {
@@ -40,7 +43,6 @@ func main() {
 		return
 	}
 
-	// 2. 기준 시간(baseTime) 결정
 	var baseTime time.Time
 	var err error
 
@@ -56,7 +58,6 @@ func main() {
 		}
 	}
 
-	// 3. Duration 파싱
 	var duration time.Duration
 
 	// 먼저 "5m", "-1h30m" 같은 표준 Duration 형식으로 파싱 시도
@@ -71,10 +72,8 @@ func main() {
 		duration = time.Duration(seconds) * time.Second
 	}
 
-	// 4. 최종 시간 계산
 	finalTime := baseTime.Add(duration)
 
-	// 5. 최종 결과를 지정된 단위로 출력
 	fmt.Printf("🔹 기준 시간: %s\n", baseTime.Format(time.RFC3339Nano))
 	fmt.Printf("🔹 적용 시간: %s\n", duration)
 	fmt.Printf("✅ 결과 시간: %s\n", finalTime.Format(time.RFC3339Nano))
