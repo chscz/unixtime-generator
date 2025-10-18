@@ -13,12 +13,32 @@ func main() {
 	// -t: 기준 시간 (생략 가능, 기본값: 현재 시간)
 	// -d: 더하거나 뺄 시간 (생략 가능, 기본값: 0)
 	// -u: 출력 단위 (생략 가능, 기본값: nano)
-	timeStr := flag.String("t", "", "기준 시간 (DateTime 형식, 예: '2025-10-18 15:04:05'). 생략 시 현재 시간")
-	durationStr := flag.String("d", "0", "계산할 시간 ('-5m', '1h', '300'). 단위 없는 숫자는 초(second)로 간주")
-	outputUnit := flag.String("u", "nano", "출력 단위: nano, micro, milli, sec")
+	timeStr := flag.String("t", "", "- 기준 시간 (DateTime 형식, 예: '2025-10-18 15:04:05'). 생략 시 현재 시간\n- ex: ug -t 2025-10-19 01:24:00\n- '2025-10-19 01:24:00' 시간을 unix time nano 단위로 변환")
+	durationStr := flag.String("d", "0", "- 계산할 시간 ('-5m', '1h', '300'). 단위 없는 숫자는 초(second)로 간주\n- ex: ug -d -10m\n- 현재 시간의 10분 전 시간을 unixtime nano 단위로 변환")
+	outputUnit := flag.String("u", "nano", "- 출력 단위: nano, micro, milli, sec\n- ex: ug -d 10m -u milli\n- 현재 시간의 10분 후 시간을 unixtime milli 단위로 변환")
+	toDateTime := flag.Int64("dt", 0, "- unixtime을 datetime으로 변환\n- ex: ug -dt 1760807714195896000\n- 이 옵션 사용시 'u' 옵션만 사용 가능, 다른 옵션(d, t)은 무시 됨\n- 옵션을 생략하면 자동으로 nano단위로 변환하고 다른 단위의 unixtime을 입력할 경우 반드시 'u' 옵션을 통해 단위를 지정해줘야 함")
 
 	// 프로그램에 전달된 옵션 파싱
 	flag.Parse()
+
+	if *toDateTime != 0 {
+		switch *outputUnit {
+		case "nano":
+			sec := *toDateTime / 1e9
+			nsec := *toDateTime % 1e9
+			fmt.Println(time.Unix(sec, nsec))
+		case "micro":
+			fmt.Println(time.UnixMicro(*toDateTime))
+		case "milli":
+			fmt.Println(time.UnixMilli(*toDateTime))
+		case "sec":
+			fmt.Println(time.Unix(*toDateTime, 0))
+		default:
+			fmt.Fprintf(os.Stderr, "오류: 잘못된 출력 단위 '%s'입니다. 'nano', 'micro', 'milli', 'sec' 중 하나를 사용하세요.\n", *outputUnit)
+			os.Exit(1)
+		}
+		return
+	}
 
 	// 2. 기준 시간(baseTime) 결정
 	var baseTime time.Time
